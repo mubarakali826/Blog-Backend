@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.5.0",
+    "mongoose": "^8.2.3",
+    "slugify": "^1.6.6"
+  }
+}
