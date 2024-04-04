@@ -83,8 +83,7 @@ exports.removeLike = async (req, res) => {
     const userId = parts[parts.length - 2];
     const blogId = parts[parts.length - 1];
     if (
-      !/^[0-9a-fA-F]{24}$/.test(userId) ||
-      !/^[0-9a-fA-F]{24}$/.test(blogId)
+      !ObjectId.isValid(userId) || !ObjectId.isValid(blogId)
     ) {
       res.end(JSON.stringify("invalid userID or blogID"));
       return (res.status = 400);
@@ -134,8 +133,7 @@ exports.removeDislike = async (req, res) => {
     const userId = parts[parts.length - 2];
     const blogId = parts[parts.length - 1];
     if (
-      !/^[0-9a-fA-F]{24}$/.test(userId) ||
-      !/^[0-9a-fA-F]{24}$/.test(blogId)
+      !ObjectId.isValid(userId) || !ObjectId.isValid(blogId)
     ) {
       res.end(JSON.stringify("invalid userID or blogID"));
       return (res.status = 400);
@@ -150,14 +148,36 @@ exports.removeDislike = async (req, res) => {
     res.status = 500;
   }
 };
+exports.getLikeCounts=async (req,res)=>{
+try{
+  const { pathname } = URL.parse(req.url, true);
 
+    const parts = pathname.split("/");
+    const blogId = parts[parts.length - 1];
+    
+    if ( !ObjectId.isValid(blogId)) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Invalid blogID" }));
+      return;
+    }
+    console.log(blogId);
+    const result =await Like.getLikeCounts(blogId);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ message: "Likes are "+result }));
+}
+catch(e){
+  console.error("Error getting  number of likes from blog post:", error);
+  res.writeHead(500, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: "Internal server error" }));
+}
+}
 exports.getLikedBlogs = async (req, res) => {
   try {
     const { pathname } = URL.parse(req.url, true);
 
     const parts = pathname.split("/");
     const userId = parts[parts.length - 1];
-    if (!/^[0-9a-fA-F]{24}$/.test(userId)) {
+    if (!ObjectId.isValid(userId)) {
       res.end(JSON.stringify("invalid userID "));
       return (res.status = 400);
     }
@@ -185,7 +205,7 @@ exports.updateBlog = async (req, res) => {
 
     const parts = pathname.split("/");
     const id = parts[parts.length - 1];
-    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+    if (!ObjectId.isValid(userId) ) {
       res.end(JSON.stringify("invalid ID"));
       return (res.status = 400);
     }
@@ -233,7 +253,7 @@ exports.deleteBlog = async (req, res) => {
     // If you want to extract the blog ID from the pathname
     const parts = pathname.split("/");
     const id = parts[parts.length - 1];
-    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+    if ( !ObjectId.isValid(blogId)) {
       res.end(JSON.stringify("invalid ID"));
       return (res.status = 400);
     }
@@ -274,16 +294,15 @@ exports.getBlogById = async (req, res) => {
 
     const parts = pathname.split("/");
     const id = parts[parts.length - 1];
-    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+    if ( !ObjectId.isValid(blogId)) {
       res.end(JSON.stringify("invalid ID"));
       return (res.status = 400);
     }
     req.on("data", (chunk) => {
-      body += chunk.toString(); // Convert Buffer to string
+      body += chunk.toString(); 
     });
 
     req.on("end", async () => {
-      // Find the blog post by ID
       const blog = await Blog.findBlogById(id);
       if (!blog) {
         res.end(JSON.stringify("Blog post not found"));

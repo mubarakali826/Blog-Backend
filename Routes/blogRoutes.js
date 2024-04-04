@@ -9,7 +9,8 @@ const {
   deleteBlog,
   getAllBlogs,
   getBlogById,
-  getLikedBlogs
+  getLikedBlogs,
+  getLikeCounts
 } = require("../controllers/blogController");
 const { verifyToken } = require("../token");
 
@@ -31,7 +32,10 @@ function handleBlogRoutes(req, res) {
   } 
   else if (method === "GET" && pathname.startsWith("/api/blogs/like")) {
     verifyToken(req, res, () => getLikedBlogs(req, res));
-  } else if (method === "PUT" && pathname.startsWith("/api/blogs/")) {
+  }
+  else if (method === "GET" && pathname.startsWith("/api/blogs/countlikes")) {
+    verifyToken(req, res, () => getLikeCounts(req, res));
+  }else if (method === "PUT" && pathname.startsWith("/api/blogs/")) {
     verifyToken(req, res, () => updateBlog(req, res));
   } else if (method === "DELETE" && pathname.startsWith("/api/blogs/")) {
     verifyToken(req, res, () => deleteBlog(req, res));

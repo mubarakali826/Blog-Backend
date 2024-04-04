@@ -33,10 +33,12 @@ exports.signup = async (req, res) => {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
+      const token = await generateToken(parsedBody);
+      res.setHeader('Authorization', `${token}`);
 
       await createUser({ username, email, password: hashedPassword });
-      res.end(JSON.stringify("User created successfully"));
-      res.status = 200;
+      res.end(JSON.stringify({message:"User created successfully",userData:parsedBody}));
+      res.status = 201; 
     } catch (error) {
       console.error("Error signing up user:", error);
       res.end(JSON.stringify("Internal server error"));
@@ -85,9 +87,9 @@ exports.login = async (req, res) => {
         return;
       }
       const token = await generateToken(parsedBody);
-      
+      console.log(token);
       res.setHeader('Authorization', `${token}`);
-      res.end(JSON.stringify({message:"Login Successful"}));
+      res.end(JSON.stringify({message:"Login Successful",userData:parsedBody}));
       res.status = 200;
     } catch (error) {
       console.error("Error logging in user:", error);

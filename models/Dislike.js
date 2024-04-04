@@ -1,5 +1,5 @@
 const { ObjectId } = require("mongodb");
-const { getClient } = require("../db");
+const { getClient } = require("../utils/db");
 
 async function dislikeBlog(userId,blogId) {
   let client = getClient();

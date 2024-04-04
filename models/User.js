@@ -1,5 +1,5 @@
 // models/User.js
-const { getClient } = require('../db');
+const { getClient } = require("../utils/db");
 async function createUser(userData) {
   const client = getClient();
   const usersCollection = client.db('test').collection('users');
