@@ -12,7 +12,7 @@ const {
   getLikedBlogs,
   getLikeCounts
 } = require("../controllers/blogController");
-const { verifyToken } = require("../token");
+const { verifyToken } = require("../utils/token");
 
 function handleBlogRoutes(req, res) {
   const { method, url, headers } = req;
