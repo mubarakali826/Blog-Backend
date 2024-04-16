@@ -70,7 +70,7 @@ exports.likeBlog = async (req, res) => {
       return;
     }
 
-    res.writeHead(200, { "Content-Type": "application/json" });
+    res.writeHead(201, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ message: "Blog Liked successfully" }));
   } catch (error) {
     console.error("Error liking blog post:", error);
@@ -119,7 +119,7 @@ exports.dislikeBlog = async (req, res) => {
       res.end(JSON.stringify({ error: "Blog already disliked" }));
       return;
     }
-    res.writeHead(200, { "Content-Type": "application/json" });
+    res.writeHead(201, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ message: "Blog disliked successfully" }));
   } catch (error) {
     console.error("Error disliking blog post:", error);
@@ -185,8 +185,8 @@ exports.getLikedBlogs = async (req, res) => {
 
     const likedBlogs = await Like.getLikedBlogs(userId);
 
+    res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(likedBlogs));
-    res.status = 200;
   } catch (error) {
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Error fetching blog posts" }));
@@ -235,8 +235,9 @@ exports.updateBlog = async (req, res) => {
         return;
       }
       await Blog.updateBlog(id, { title, content, slug });
-      res.writeHead(404, { "Content-Type": "application/json" });
-      res.end(JSON.stringify("Blog post updated successfully"));
+      res.writeHead(201, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ message: "Blog post updated" }));
+        return;
     });
   } catch (error) {
     console.error("Error updating blog post:", error);

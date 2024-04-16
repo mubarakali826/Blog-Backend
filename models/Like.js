@@ -9,7 +9,9 @@ async function likeBlog(userId,blogId) {
       return "err"
   }
   return await likesCollection.insertOne({ blogID: new ObjectId(blogId), userID: new ObjectId(userId) });
-  }async function getLikeCounts(blogId) {
+  }
+  
+  async function getLikeCounts(blogId) {
   let client = getClient();
   const likesCollection = client.db("test").collection("likes");
   const count = await likesCollection.countDocuments({ blogID: new ObjectId(blogId) });
@@ -23,18 +25,24 @@ async function removeLike(userId,blogId) {
 }
 
 async function getLikedBlogs(userId) {
-    let client = getClient();
-    const likesCollection = client.db("test").collection("likes");
-    const blogIDs = await likesCollection.find({ userID: new ObjectId(userId) }).toArray();
+  let client = getClient();
+  const likesCollection = client.db("test").collection("likes");
+  
+  const Blogs = await likesCollection.aggregate([
+      {
+          $match: { userID: new ObjectId(userId) }
+      },
+      {
+          $lookup: {
+              from: "blogs",
+              localField: "blogID",
+              foreignField: "_id",
+              as: "likedBlogs"
+          }
+      }
+  ]).toArray();
 
-    const blogsCollection = client.db('test').collection('blogs');
-    const likedBlogs = [];
-
-    for (const like of blogIDs) {
-        const blog = await blogsCollection.findOne({ _id: new ObjectId(like.blogID) });
-        likedBlogs.push(blog);
-    }
-    return likedBlogs;
+  return Blogs.map(like => like.likedBlogs[0]);
 }
 
 
