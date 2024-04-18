@@ -13,6 +13,8 @@ const {
   getLikeCounts
 } = require("../controllers/blogController");
 const { verifyToken } = require("../utils/token");
+const message = require("../helpers/message");
+
 
 function handleBlogRoutes(req, res) {
   const { method, url, headers } = req;
@@ -44,8 +46,8 @@ function handleBlogRoutes(req, res) {
   } else if (method === "GET" && pathname.startsWith("/api/blogs/")) {
     getBlogById(req, res);
   } else {
-    res.writeHead(404, { "Content-Type": "text/pl ain" });
-    res.end("404 Not Found");
+    message.sendErrorResponse(res, 400, "Invalid Endpoint");
+    return;
   }
 }
 

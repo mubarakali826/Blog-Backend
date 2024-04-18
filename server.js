@@ -1,23 +1,24 @@
-const http = require('http');
-const handleAuthRoutes = require('./Routes/authRoutes');
-const handleBlogRoutes = require('./Routes/blogRoutes');
-const { connectToDatabase } = require('./utils/db');
-require('dotenv').config();
+const http = require("http");
+const handleAuthRoutes = require("./Routes/authRoutes");
+const handleBlogRoutes = require("./Routes/blogRoutes");
+const { connectToDatabase } = require("./utils/db");
+require("dotenv").config();
+const message = require("./helpers/message");
 
-const PORT = process.env.PORT ;
+const PORT = process.env.PORT;
 
 connectToDatabase().then(() => {
   const server = http.createServer((req, res) => {
-    if (req.url.startsWith('/api/auth')) {
-      handleAuthRoutes(req, res); 
-    } else if (req.url.startsWith('/api/blog')) {
+    if (req.url.startsWith("/api/auth")) {
+      handleAuthRoutes(req, res);
+    } else if (req.url.startsWith("/api/blog")) {
       handleBlogRoutes(req, res);
     } else {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('404 Not Found');
+      message.sendErrorResponse(res, 400,"invalid endpoint");
+      return;
     }
   });
-  // Listen on the specified port
+
   server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });

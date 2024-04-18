@@ -1,28 +1,34 @@
 const jwt = require("jsonwebtoken");
-require('dotenv').config();
+require("dotenv").config();
+const message = require("../helpers/message");
 
-const secretKey=process.env.SECRET_KEY
- function generateToken(user) {
-    const token =  jwt.sign(user, secretKey, { expiresIn: "1h" });
-    return token;
-}   
-function verifyToken(req,res,next) {
-    
-    const token = req.headers["authorization"];
-  
-    if (!token) {
-      res.writeHead(401, { 'Content-Type': 'text/json' })
-      res.end(JSON.stringify({message:'Unauthorized access:No token provided'}))
-      return 
-    }
-  
-    jwt.verify(token, secretKey, (err) => {
-      if (err) {
-        res.writeHead(401, { 'Content-Type': 'text/json' })
-        res.end(JSON.stringify({message:'Unauthorized access: Invalid token'}))
-        return 
-      }
-      next();
-    });
+const secretKey = process.env.SECRET_KEY;
+function generateToken(user) {
+  const token = jwt.sign(user, secretKey, { expiresIn: "1h" });
+  return token;
+}
+function verifyToken(req, res, next) {
+  const token = req.headers["authorization"];
+
+  if (!token) {
+    message.sendErrorResponse(
+      res,
+      401,
+      "Unauthorized access:No token provided"
+    );
+    return;
   }
-module.exports = { generateToken , verifyToken };
+
+  jwt.verify(token, secretKey, (err) => {
+    if (err) {
+      message.sendErrorResponse(
+        res,
+        401,
+        "Unauthorized access:invalid token"
+      );
+      return;
+    }
+    next();
+  });
+}
+module.exports = { generateToken, verifyToken };

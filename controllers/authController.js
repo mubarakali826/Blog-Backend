@@ -1,6 +1,7 @@
 const { createUser, findUserByEmail } = require("../models/User");
 const bcrypt = require("bcrypt");
 const { generateToken } = require("../utils/token");
+const message=require("../helpers/message")
 
 exports.signup = async (req, res) => {
   let body = "";
@@ -15,23 +16,18 @@ exports.signup = async (req, res) => {
       try {
         parsedBody = JSON.parse(body);
       } catch (error) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ message: "Invalid Entry" }));
+        message.sendErrorResponse(res,400,"Invalid entry") 
         return;
       }
       const { username, email, password } = parsedBody;
       if (!username || !email || !password) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-
-        res.end(JSON.stringify({ message: "Please fill the required fields" }));
+        message.sendErrorResponse(res,400,"Please fill the required fields") 
         return;
       }
       const existingUser = await findUserByEmail(email);
       if (existingUser) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-
-        res.end(JSON.stringify("User already exists"));
-        return;
+      message.sendErrorResponse(res,400,"User already exists") 
+      return;
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -39,19 +35,11 @@ exports.signup = async (req, res) => {
       res.setHeader("Authorization", `${token}`);
 
       await createUser({ username, email, password: hashedPassword });
-      res.writeHead(201, { "Content-Type": "application/json" });
-
-      res.end(
-        JSON.stringify({
-          message: "User created successfully",
-          userData: parsedBody,
-          token: token,
-        })
-      );
+      message.sendCustomResponse(res, 201, {message:'user created successfully',user_data:parsedBody,token});
+      
     } catch (error) {
       console.error("Error signing up user:", error);
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify("Internal server error"));
+      message.sendErrorResponse(res,500,"internal server error")
       return;
     }
   });
@@ -70,53 +58,44 @@ exports.login = async (req, res) => {
       try {
         parsedBody = JSON.parse(body);
       } catch (error) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ message: "Invalid Entry" }));
+         message.sendErrorResponse(res,400,"Invalid entry")
         return;
       }
       const { email, password } = parsedBody;
       if (!email || !password) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-
-        res.end(JSON.stringify({ message: "Please fill the required fields" }));
+        message.sendErrorResponse(res,400,"please fill the required fields")
         return;
       }
 
       const user = await findUserByEmail(email);
 
       if (!user) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-
-        res.end(JSON.stringify("invalid email or password"));
-
+        message.sendErrorResponse(res,401,"invalid email or password")
         return;
       }
 
       const isPasswordMatch = await bcrypt.compare(password, user.password);
 
       if (!isPasswordMatch) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-
-        res.end(JSON.stringify("invalid email or password"));
+        message.sendErrorResponse(res,401,"invalid email or password")
         return;
       }
       const token = await generateToken(parsedBody);
       console.log(token);
       res.setHeader("Authorization", `${token}`);
-      res.writeHead(200, { "Content-Type": "application/json" });
+      // res.writeHead(200, { "Content-Type": "application/json" });
 
-      res.end(
-        JSON.stringify({
-          message: "Login Successful",
-          userData: parsedBody,
-          token: token,
-        })
-      );
+      // res.end(
+      //   JSON.stringify({
+      //     message: "Login Successful",
+      //     userData: parsedBody,
+      //     token: token,
+      //   })
+      // );
+      message.sendSuccessResponse(res, 'Logged in successfully', {user_data:parsedBody,token});
     } catch (error) {
       console.error("Error logging in user:", error);
-      res.writeHead(500, { "Content-Type": "application/json" });
-
-      res.end(JSON.stringify("Internal server error"));
+      message.sendErrorResponse(res,500,"internal server error")
       return;
     }
   });

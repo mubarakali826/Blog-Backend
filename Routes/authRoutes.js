@@ -1,4 +1,5 @@
 const { signup, login } = require('../controllers/authController');
+const message = require("../helpers/message");
 
 function handleAuthRoutes(req, res) {
   const { method , url } = req;
@@ -7,9 +8,8 @@ function handleAuthRoutes(req, res) {
   } else if (method === 'POST' && url.endsWith('/login')) {
     login(req, res );
   } else {
-    // Handle 404
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('404 Not Found');
+    message.sendErrorResponse(res, 400, "Invalid Endpoint");
+    return;
   }
 }
 

@@ -4,6 +4,7 @@ const Dislike = require("../models/Dislike");
 const URL = require("url");
 const slugify = require("slugify");
 const { ObjectId } = require("mongodb");
+const message = require("../helpers/message");
 
 exports.createBlog = async (req, res) => {
   try {
@@ -18,35 +19,31 @@ exports.createBlog = async (req, res) => {
       try {
         parsedBody = JSON.parse(body);
       } catch (error) {
-        res.writeHead(401, { "Content-Type": "text/json" });
-        res.end(JSON.stringify({ message: "Invalid entry" }));
+        message.sendErrorResponse(res, 400, "Invalid entry");
         return;
       }
       const { title, content } = parsedBody;
       if (!title || !content) {
-        res.writeHead(400, { "Content-Type": "text/json" });
-        res.end(JSON.stringify({ message: "Please fill the required fields" }));
+        message.sendErrorResponse(res, 400, "please fill the required fields");
         return;
       }
 
       const slug = slugify(title, "-");
       const existingSlug = await Blog.findBlogBySlug(slug);
       if (existingSlug) {
-        res.writeHead(400, { "Content-Type": "text/json" });
-        res.end(JSON.stringify({ message: "This slug is already in use" }));
+        message.sendErrorResponse(res, 400, "This slug is already in use");
         return;
       }
 
       // Create a new blog post
       await Blog.createBlog({ title, content, slug });
-      res.writeHead(200, { "Content-Type": "text/json" });
-      res.end(JSON.stringify({ message: "Blog post created successfully" }));
-      return;
+      message.sendSuccessResponse(res, "Blog post created successfully", {
+        blogData: { title: title, content: content, slug: slug },
+      });
     });
   } catch (error) {
     console.error("Error creating blog post:", e);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ message: "Internal server error" }));
+    message.sendErrorResponse(res, 500, "internal server error");
     return;
   }
 };
@@ -58,24 +55,21 @@ exports.likeBlog = async (req, res) => {
     const blogId = parts[parts.length - 1];
 
     if (!ObjectId.isValid(userId) || !ObjectId.isValid(blogId)) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Invalid userID or blogID" }));
+      message.sendErrorResponse(res, 400, "Invalid userID or blogID");
       return;
     }
 
     const result = await Like.likeBlog(userId, blogId);
     if (result === "err") {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Blog already liked" }));
+      message.sendErrorResponse(res, 400, "Blog already liked");
       return;
     }
 
-    res.writeHead(201, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ message: "Blog Liked successfully" }));
+    message.sendCustomResponse(res,201, {message:"Blog liked successfully"});
   } catch (error) {
     console.error("Error liking blog post:", error);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Internal server error" }));
+    message.sendErrorResponse(res, 500, "internal server error");
+    return;
   }
 };
 exports.removeLike = async (req, res) => {
@@ -86,17 +80,25 @@ exports.removeLike = async (req, res) => {
     const userId = parts[parts.length - 2];
     const blogId = parts[parts.length - 1];
     if (!ObjectId.isValid(userId) || !ObjectId.isValid(blogId)) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Invalid userID or blogID" }));
+      message.sendErrorResponse(res, 400, "Invalid userID or blogID");
       return;
     }
-    await Like.removeLike(userId, blogId);
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ message: "Blog like removed successfully" }));
+    const result = await Like.likeBlog(userId, blogId);
+
+    if (result === "err") {
+      await Like.removeLike(userId, blogId);
+      message.sendSuccessResponse(res, "Blog like removed successfully");
+      return;
+    }   
+    else{
+      await Like.removeLike(userId, blogId);
+      message.sendErrorResponse(res, 400, "Blog not already liked");
+    return
+    }
   } catch (e) {
     console.error("Error removing like from blog post:", e);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Internal server error" }));
+    message.sendErrorResponse(res, 500, "internal server error");
+    return;
   }
 };
 exports.dislikeBlog = async (req, res) => {
@@ -108,23 +110,20 @@ exports.dislikeBlog = async (req, res) => {
     const blogId = parts[parts.length - 1];
 
     if (!ObjectId.isValid(userId) || !ObjectId.isValid(blogId)) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Invalid userID or blogID" }));
+      message.sendErrorResponse(res, 400, "Invalid userID or blogID");
       return;
     }
 
     const result = await Dislike.dislikeBlog(userId, blogId);
     if (result === "err") {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Blog already disliked" }));
+      message.sendErrorResponse(res, 400, "Blog already disliked");
       return;
     }
-    res.writeHead(201, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ message: "Blog disliked successfully" }));
+    message.sendCustomResponse(res,201, {message:"Blog disliked successfully"});
   } catch (error) {
     console.error("Error disliking blog post:", error);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Internal server error" }));
+    message.sendErrorResponse(res, 500, "internal server error");
+    return;
   }
 };
 exports.removeDislike = async (req, res) => {
@@ -135,18 +134,24 @@ exports.removeDislike = async (req, res) => {
     const userId = parts[parts.length - 2];
     const blogId = parts[parts.length - 1];
     if (!ObjectId.isValid(userId) || !ObjectId.isValid(blogId)) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Invalid userID or blogID" }));
+      message.sendErrorResponse(res, 400, "Invalid userID or blogID");
       return;
     }
-    await Dislike.removeDislike(userId, blogId);
-    await Dislike.removeDislike(userId, blogId);
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ message: "Blog dislike removed successfully" }));
+    const result = await Dislike.dislikeBlog(userId, blogId);
+    if (result === "err") {
+      await Dislike.removeDislike(userId, blogId);
+      message.sendSuccessResponse(res, "Blog dislike removed successfully");
+      return;
+    }   
+    else{
+      await Dislike.removeDislike(userId, blogId);
+      message.sendErrorResponse(res, 400, "Blog not already disliked");
+    return
+    }
   } catch (e) {
     console.error("Error removeing dislike from blog post:", e);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Internal server error" }));
+    message.sendErrorResponse(res, 500, "internal server error");
+    return;
   }
 };
 exports.getLikeCounts = async (req, res) => {
@@ -157,18 +162,16 @@ exports.getLikeCounts = async (req, res) => {
     const blogId = parts[parts.length - 1];
 
     if (!ObjectId.isValid(blogId)) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Invalid blogID" }));
+      message.sendErrorResponse(res, 400, "Invalid userID or blogID");
       return;
     }
     console.log(blogId);
     const result = await Like.getLikeCounts(blogId);
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ message: "Likes are " + result }));
+    message.sendCustomResponse(res, 200, { LikesCount: result });
   } catch (e) {
     console.error("Error getting  number of likes from blog post:", error);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Internal server error" }));
+    message.sendErrorResponse(res, 500, "internal server error");
+    return;
   }
 };
 exports.getLikedBlogs = async (req, res) => {
@@ -178,18 +181,15 @@ exports.getLikedBlogs = async (req, res) => {
     const parts = pathname.split("/");
     const userId = parts[parts.length - 1];
     if (!ObjectId.isValid(userId)) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Invalid userID" }));
+      message.sendErrorResponse(res, 400, "Invalid userID");
       return;
     }
 
     const likedBlogs = await Like.getLikedBlogs(userId);
 
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(likedBlogs));
+    message.sendCustomResponse(res, 200, { likedBlogs: likedBlogs });
   } catch (error) {
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Error fetching blog posts" }));
+    message.sendErrorResponse(res, 500, "internal server error");
     return;
   }
 };
@@ -207,8 +207,7 @@ exports.updateBlog = async (req, res) => {
     const parts = pathname.split("/");
     const id = parts[parts.length - 1];
     if (!ObjectId.isValid(id)) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Invalid blogID" }));
+      message.sendErrorResponse(res, 400, "Invalid blogID");
       return;
     }
     req.on("end", async () => {
@@ -216,33 +215,30 @@ exports.updateBlog = async (req, res) => {
       try {
         parsedBody = JSON.parse(body);
       } catch (error) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Invalid entry" }));
+        message.sendErrorResponse(res, 400, "Invalid entry");
         return;
       }
       const { title, content } = parsedBody;
       if (!title || !content) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Please fill the required fields" }));
+        message.sendErrorResponse(res, 400, "Please fill the required fields");
         return;
       }
       const slug = slugify(title, "-");
 
       const blog = await Blog.findBlogById(id);
       if (!blog) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Blog post not found" }));
+        message.sendErrorResponse(res, 400, "Blog post not found");
         return;
       }
       await Blog.updateBlog(id, { title, content, slug });
-      res.writeHead(201, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ message: "Blog post updated" }));
-        return;
+      message.sendSuccessResponse(res, "Blog post updated successfully", {
+        updatedBlogData: { title: title, content: content, slug: slug }
+      });
     });
   } catch (error) {
     console.error("Error updating blog post:", error);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify("Internal server error"));
+    message.sendErrorResponse(res, 500, "internal server error");
+    return;
   }
 };
 
@@ -257,27 +253,22 @@ exports.deleteBlog = async (req, res) => {
     // If you want to extract the blog ID from the pathname
     const parts = pathname.split("/");
     const id = parts[parts.length - 1];
-    if (!ObjectId.isValid(blogId)) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify("invalid ID"));
+    if (!ObjectId.isValid(id)) {
+      message.sendErrorResponse(res, 400, "Invalid blogID");
       return;
     }
     req.on("end", async () => {
       const deletedBlog = await Blog.deleteBlog(id);
       if (deletedBlog.deletedCount == 0) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify("Blog post not found"));
+        message.sendErrorResponse(res, 404, "Blog post not found");
         return;
       }
-      res.writeHead(200, { "Content-Type": "application/json" });
+      message.sendSuccessResponse(res, "Blog deleted successfully");
 
-      res.end(JSON.stringify("Blog post deleted successfully"));
-      return;
     });
   } catch (error) {
     console.error("Error deleting blog post:", error);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify("Internal server error"));
+    message.sendErrorResponse(res, 500, "internal server error");
     return;
   }
 };
@@ -286,12 +277,11 @@ exports.getAllBlogs = async (req, res) => {
   try {
     const blogs = await Blog.getAllBlogs();
 
-    res.end(JSON.stringify(blogs));
-    res.status = 200;
+    message.sendCustomResponse(res, 200, { allBlogs: blogs });
+
   } catch (error) {
     console.error("Error fetching all blog posts:", error);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify("Internal server error"));
+    message.sendErrorResponse(res, 500, "internal server error");
     return;
   }
 };
@@ -304,8 +294,7 @@ exports.getBlogById = async (req, res) => {
     const parts = pathname.split("/");
     const id = parts[parts.length - 1];
     if (!ObjectId.isValid(id)) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify("invalid ID"));
+      message.sendErrorResponse(res, 400, "Invalid blogID");
       return;
     }
     req.on("data", (chunk) => {
@@ -315,18 +304,16 @@ exports.getBlogById = async (req, res) => {
     req.on("end", async () => {
       const blog = await Blog.findBlogById(id);
       if (!blog) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify("Blog post not found"));
-        return ;
+        message.sendErrorResponse(res, 404, "Blog post not found");
+        return;
       }
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(blog));
+      message.sendSuccessResponse(res, '', {blog:blog});
       return;
+
     });
   } catch (error) {
     console.error("Error fetching blog post by ID:", error);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify("Internal server error"));
+    message.sendErrorResponse(res, 500, "internal server error");
     return;
   }
 };
