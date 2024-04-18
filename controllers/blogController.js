@@ -63,8 +63,12 @@ exports.likeBlog = async (req, res) => {
     }
 
     const result = await Like.likeBlog(userId, blogId);
-    if (result === "err") {
+    if (result === "already") {
       message.sendErrorResponse(res, 400, "Blog already liked");
+      return;
+    }
+    else if (result === "nonExistent") {
+      message.sendErrorResponse(res, 400, "Blog doesnot exist");
       return;
     }
 
@@ -121,8 +125,12 @@ exports.dislikeBlog = async (req, res) => {
     }
 
     const result = await Dislike.dislikeBlog(userId, blogId);
-    if (result === "err") {
+    if (result === "already") {
       message.sendErrorResponse(res, 400, "Blog already disliked");
+      return;
+    }
+    else if (result === "nonExistent") {
+      message.sendErrorResponse(res, 400, "Blog doesnot exist");
       return;
     }
     message.sendCustomResponse(res, 201, {

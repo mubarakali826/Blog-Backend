@@ -3,10 +3,15 @@ const { getClient } = require("../utils/db");
 
 async function likeBlog(userId,blogId) {
   let client = getClient();
+  const blogsCollection = client.db("test").collection("blogs");
   const likesCollection = client.db("test").collection("likes");
-  const existingLike = await likesCollection.findOne({ userID: new ObjectId(userId), blogID: new ObjectId(blogId) });
+  const blog = await blogsCollection.findOne({ _id: new ObjectId(blogId) });
+  if (!blog) {
+      return "nonExistent"
+  }
+  const existingLike = await likesCollection.findOne({ userID: new ObjectId(userId), blogID: new ObjectId(blogId) }) ;
   if (existingLike) {
-      return "err"
+      return "already"
   }
   return await likesCollection.insertOne({ blogID: new ObjectId(blogId), userID: new ObjectId(userId) });
   }

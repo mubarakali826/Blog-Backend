@@ -32,7 +32,7 @@ function handleBlogRoutes(req, res) {
   } else if (method === "DELETE" && pathname.startsWith("/api/blogs/dislike")) {
     verifyToken(req, res, () => removeDislike(req, res));
   } 
-  else if (method === "GET" && pathname.startsWith("/api/blogs/like")) {
+  else if (method === "GET" && pathname==="/api/blogs/like") {
     verifyToken(req, res, () => getLikedBlogs(req, res));
   }
   else if (method === "GET" && pathname.startsWith("/api/blogs/countlikes")) {

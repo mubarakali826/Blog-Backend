@@ -4,9 +4,15 @@ const { getClient } = require("../utils/db");
 async function dislikeBlog(userId,blogId) {
   let client = getClient();
   const dislikesCollection = client.db("test").collection("dislikes");
-  const existingDislike = await dislikesCollection.findOne({ userID: new ObjectId(userId), blogID: new ObjectId(blogId) });
-  if (existingDislike) {
-      return "err"
+  const blogsCollection = client.db("test").collection("blogs");
+  
+  const blog = await blogsCollection.findOne({ _id: new ObjectId(blogId) });
+  if (!blog) {
+      return "nonExistent"
+  }
+  const existingDisike = await dislikesCollection.findOne({ userID: new ObjectId(userId), blogID: new ObjectId(blogId) }) ;
+  if (existingDisike) {
+      return "already"
   }
   return await dislikesCollection.insertOne({ blogID: new ObjectId(blogId), userID: new ObjectId(userId) });
 }

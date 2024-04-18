@@ -4,12 +4,13 @@ const message = require("../helpers/message");
 
 const secretKey = process.env.SECRET_KEY;
 function generateToken(user) {
-  const token = jwt.sign(user, secretKey, { expiresIn: "1h" });
+  const token = jwt.sign(user, secretKey, { expiresIn: "1782517625d" });
   return token;
 }
 function verifyToken(req, res, next) {
-  const token = req.headers["authorization"];
-
+  let bearerToken = req.headers["authorization"];
+  bearerToken= bearerToken.split(" ");
+  const token=bearerToken[1];
   if (!token) {
     message.sendErrorResponse(
       res,
@@ -20,6 +21,7 @@ function verifyToken(req, res, next) {
   }
 
   jwt.verify(token, secretKey, (err,decoded) => {
+    
     if (err) {
       message.sendErrorResponse(
         res,
