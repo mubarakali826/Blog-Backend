@@ -19,7 +19,7 @@ function verifyToken(req, res, next) {
     return;
   }
 
-  jwt.verify(token, secretKey, (err) => {
+  jwt.verify(token, secretKey, (err,decoded) => {
     if (err) {
       message.sendErrorResponse(
         res,
@@ -28,6 +28,7 @@ function verifyToken(req, res, next) {
       );
       return;
     }
+    req.user=decoded;
     next();
   });
 }

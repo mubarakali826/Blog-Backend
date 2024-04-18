@@ -5,6 +5,7 @@ const URL = require("url");
 const slugify = require("slugify");
 const { ObjectId } = require("mongodb");
 const message = require("../helpers/message");
+const { findUserByEmail } = require("../models/User");
 
 exports.createBlog = async (req, res) => {
   try {
@@ -51,11 +52,13 @@ exports.likeBlog = async (req, res) => {
   try {
     const { pathname } = URL.parse(req.url, true);
     const parts = pathname.split("/");
-    const userId = parts[parts.length - 2];
+    // console.log("Decoded token:", req.user);
+    const user = await findUserByEmail(req.user.email);
+    const userId = user._id;
     const blogId = parts[parts.length - 1];
 
-    if (!ObjectId.isValid(userId) || !ObjectId.isValid(blogId)) {
-      message.sendErrorResponse(res, 400, "Invalid userID or blogID");
+    if (!ObjectId.isValid(blogId)) {
+      message.sendErrorResponse(res, 400, "Invalid blogID");
       return;
     }
 
@@ -65,7 +68,9 @@ exports.likeBlog = async (req, res) => {
       return;
     }
 
-    message.sendCustomResponse(res,201, {message:"Blog liked successfully"});
+    message.sendCustomResponse(res, 201, {
+      message: "Blog liked successfully",
+    });
   } catch (error) {
     console.error("Error liking blog post:", error);
     message.sendErrorResponse(res, 500, "internal server error");
@@ -77,10 +82,11 @@ exports.removeLike = async (req, res) => {
     const { pathname } = URL.parse(req.url, true);
 
     const parts = pathname.split("/");
-    const userId = parts[parts.length - 2];
+    const user = await findUserByEmail(req.user.email);
+    const userId = user._id;
     const blogId = parts[parts.length - 1];
-    if (!ObjectId.isValid(userId) || !ObjectId.isValid(blogId)) {
-      message.sendErrorResponse(res, 400, "Invalid userID or blogID");
+    if ( !ObjectId.isValid(blogId)) {
+      message.sendErrorResponse(res, 400, "Invalid blogID");
       return;
     }
     const result = await Like.likeBlog(userId, blogId);
@@ -89,11 +95,10 @@ exports.removeLike = async (req, res) => {
       await Like.removeLike(userId, blogId);
       message.sendSuccessResponse(res, "Blog like removed successfully");
       return;
-    }   
-    else{
+    } else {
       await Like.removeLike(userId, blogId);
       message.sendErrorResponse(res, 400, "Blog not already liked");
-    return
+      return;
     }
   } catch (e) {
     console.error("Error removing like from blog post:", e);
@@ -106,11 +111,12 @@ exports.dislikeBlog = async (req, res) => {
     const { pathname } = URL.parse(req.url, true);
 
     const parts = pathname.split("/");
-    const userId = parts[parts.length - 2];
+    const user = await findUserByEmail(req.user.email);
+    const userId = user._id;
     const blogId = parts[parts.length - 1];
 
-    if (!ObjectId.isValid(userId) || !ObjectId.isValid(blogId)) {
-      message.sendErrorResponse(res, 400, "Invalid userID or blogID");
+    if ( !ObjectId.isValid(blogId)) {
+      message.sendErrorResponse(res, 400, "Invalid blogID");
       return;
     }
 
@@ -119,7 +125,9 @@ exports.dislikeBlog = async (req, res) => {
       message.sendErrorResponse(res, 400, "Blog already disliked");
       return;
     }
-    message.sendCustomResponse(res,201, {message:"Blog disliked successfully"});
+    message.sendCustomResponse(res, 201, {
+      message: "Blog disliked successfully",
+    });
   } catch (error) {
     console.error("Error disliking blog post:", error);
     message.sendErrorResponse(res, 500, "internal server error");
@@ -131,10 +139,11 @@ exports.removeDislike = async (req, res) => {
     const { pathname } = URL.parse(req.url, true);
 
     const parts = pathname.split("/");
-    const userId = parts[parts.length - 2];
+    const user = await findUserByEmail(req.user.email);
+    const userId = user._id;
     const blogId = parts[parts.length - 1];
-    if (!ObjectId.isValid(userId) || !ObjectId.isValid(blogId)) {
-      message.sendErrorResponse(res, 400, "Invalid userID or blogID");
+    if ( !ObjectId.isValid(blogId)) {
+      message.sendErrorResponse(res, 400, "Invalid blogID");
       return;
     }
     const result = await Dislike.dislikeBlog(userId, blogId);
@@ -142,11 +151,10 @@ exports.removeDislike = async (req, res) => {
       await Dislike.removeDislike(userId, blogId);
       message.sendSuccessResponse(res, "Blog dislike removed successfully");
       return;
-    }   
-    else{
+    } else {
       await Dislike.removeDislike(userId, blogId);
       message.sendErrorResponse(res, 400, "Blog not already disliked");
-    return
+      return;
     }
   } catch (e) {
     console.error("Error removeing dislike from blog post:", e);
@@ -162,10 +170,9 @@ exports.getLikeCounts = async (req, res) => {
     const blogId = parts[parts.length - 1];
 
     if (!ObjectId.isValid(blogId)) {
-      message.sendErrorResponse(res, 400, "Invalid userID or blogID");
+      message.sendErrorResponse(res, 400, "Invalid blogID");
       return;
     }
-    console.log(blogId);
     const result = await Like.getLikeCounts(blogId);
     message.sendCustomResponse(res, 200, { LikesCount: result });
   } catch (e) {
@@ -176,14 +183,8 @@ exports.getLikeCounts = async (req, res) => {
 };
 exports.getLikedBlogs = async (req, res) => {
   try {
-    const { pathname } = URL.parse(req.url, true);
-
-    const parts = pathname.split("/");
-    const userId = parts[parts.length - 1];
-    if (!ObjectId.isValid(userId)) {
-      message.sendErrorResponse(res, 400, "Invalid userID");
-      return;
-    }
+    const user = await findUserByEmail(req.user.email);
+    const userId = user._id;
 
     const likedBlogs = await Like.getLikedBlogs(userId);
 
@@ -232,7 +233,7 @@ exports.updateBlog = async (req, res) => {
       }
       await Blog.updateBlog(id, { title, content, slug });
       message.sendSuccessResponse(res, "Blog post updated successfully", {
-        updatedBlogData: { title: title, content: content, slug: slug }
+        updatedBlogData: { title: title, content: content, slug: slug },
       });
     });
   } catch (error) {
@@ -264,7 +265,6 @@ exports.deleteBlog = async (req, res) => {
         return;
       }
       message.sendSuccessResponse(res, "Blog deleted successfully");
-
     });
   } catch (error) {
     console.error("Error deleting blog post:", error);
@@ -278,7 +278,6 @@ exports.getAllBlogs = async (req, res) => {
     const blogs = await Blog.getAllBlogs();
 
     message.sendCustomResponse(res, 200, { allBlogs: blogs });
-
   } catch (error) {
     console.error("Error fetching all blog posts:", error);
     message.sendErrorResponse(res, 500, "internal server error");
@@ -307,9 +306,8 @@ exports.getBlogById = async (req, res) => {
         message.sendErrorResponse(res, 404, "Blog post not found");
         return;
       }
-      message.sendSuccessResponse(res, '', {blog:blog});
+      message.sendSuccessResponse(res, "", { blog: blog });
       return;
-
     });
   } catch (error) {
     console.error("Error fetching blog post by ID:", error);
