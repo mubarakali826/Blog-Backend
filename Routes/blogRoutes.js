@@ -1,4 +1,5 @@
-const URL = require("url");
+const express = require('express');
+const router = express.Router();
 const {
   createBlog,
   likeBlog,
@@ -11,44 +12,34 @@ const {
   getBlogById,
   getLikedBlogs,
   getLikeCounts
-} = require("../controllers/blogController");
-const { verifyToken } = require("../utils/token");
-const message = require("../helpers/message");
+} = require('../controllers/blogController');
+const { verifyToken } = require('../utils/token');
+const message = require('../helpers/message');
 
+// Middleware to verify token for specific routes
+router.use('/like/:id', verifyToken);
+router.use('/dislike', verifyToken);
+router.use('/like', verifyToken);
+router.use('/dislike', verifyToken);
+router.use('/countlikes', verifyToken);
+router.use('/:id', verifyToken);
 
-function handleBlogRoutes(req, res) {
-  const { method, url, headers } = req;
-  const { pathname } = URL.parse(url);
-  console.log("Request pathname:", pathname);
+// Routes
+router.post('/', createBlog);
+router.post('/like/:id', likeBlog);
+router.post('/dislike/:id', dislikeBlog);
+router.delete('/like/:id', removeLike);
+router.delete('/dislike/:id', removeDislike);
+router.get('/like', getLikedBlogs);
+router.get('/countlikes/:id', getLikeCounts);
+router.put('/:id', updateBlog);
+router.delete('/:id', deleteBlog);
+router.get('/:id', getBlogById);
+router.get('/', getAllBlogs);
 
-  if (method === "POST" && pathname === "/api/blogs") {
-    verifyToken(req, res, () => createBlog(req, res));
-  } else if (method === "POST" && pathname.startsWith("/api/blogs/like")) {
-    verifyToken(req, res, () => likeBlog(req, res));
-  } else if (method === "POST" && pathname.startsWith("/api/blogs/dislike")) {
-    verifyToken(req, res, () => dislikeBlog(req, res));
-  } else if (method === "DELETE" && pathname.startsWith("/api/blogs/like")) {
-    verifyToken(req, res, () => removeLike(req, res));
-  } else if (method === "DELETE" && pathname.startsWith("/api/blogs/dislike")) {
-    verifyToken(req, res, () => removeDislike(req, res));
-  } 
-  else if (method === "GET" && pathname==="/api/blogs/like") {
-    verifyToken(req, res, () => getLikedBlogs(req, res));
-  }
-  else if (method === "GET" && pathname.startsWith("/api/blogs/countlikes")) {
-    verifyToken(req, res, () => getLikeCounts(req, res));
-  }else if (method === "PUT" && pathname.startsWith("/api/blogs/")) {
-    verifyToken(req, res, () => updateBlog(req, res));
-  } else if (method === "DELETE" && pathname.startsWith("/api/blogs/")) {
-    verifyToken(req, res, () => deleteBlog(req, res));
-  } else if (method === "GET" && pathname === "/api/blogs") {
-    getAllBlogs(req, res);
-  } else if (method === "GET" && pathname.startsWith("/api/blogs/")) {
-    getBlogById(req, res);
-  } else {
-    message.sendErrorResponse(res, 400, "Invalid Endpoint");
-    return;
-  }
-}
+// Invalid endpoint handler
+router.use((req, res) => {
+  message.sendErrorResponse(res, 400, 'Invalid Endpoint');
+});
 
-module.exports = handleBlogRoutes;
+module.exports = router;
