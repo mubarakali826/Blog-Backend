@@ -11,7 +11,6 @@ function generateToken(user) {
 
 function verifyToken(req, res, next) {
   let bearerToken = req.headers["authorization"];
-
   if (!bearerToken || !bearerToken.startsWith("Bearer ")) {
     return message.sendErrorResponse(
       res,
