@@ -25,7 +25,7 @@ router.use('/countlikes', verifyToken);
 router.use('/:id', verifyToken);
 
 // Routes
-router.post('/', createBlog);
+router.post('/', verifyToken, createBlog);
 router.post('/like/:id', likeBlog);
 router.post('/dislike/:id', dislikeBlog);
 router.delete('/like/:id', removeLike);

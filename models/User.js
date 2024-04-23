@@ -1,17 +1,25 @@
-// models/User.js
-const { getClient } = require("../utils/db");
-async function createUser(userData) {
-  const client = getClient();
-  const usersCollection = client.db('test').collection('users');
-  const result = await usersCollection.insertOne(userData);
-  return result;
-}
+const mongoose = require('mongoose');
 
-async function findUserByEmail( email) {
-  const client = getClient();
-  const usersCollection = client.db('test').collection('users');
-  const user = await usersCollection.findOne({ email });
-  return user;
-}
+// Define the user schema
+const userSchema = new mongoose.Schema({
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  username: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  password: {
+    type: String,
+    required: true
+  }
+ 
+});
 
-module.exports = { createUser, findUserByEmail };
+// Create a model from the schema
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;

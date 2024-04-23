@@ -1,25 +1,20 @@
-const { ObjectId } = require("mongodb");
-const { getClient } = require("../utils/db");
+const mongoose = require('mongoose');
 
-async function dislikeBlog(userId,blogId) {
-  let client = getClient();
-  const dislikesCollection = client.db("test").collection("dislikes");
-  const blogsCollection = client.db("test").collection("blogs");
-  
-  const blog = await blogsCollection.findOne({ _id: new ObjectId(blogId) });
-  if (!blog) {
-      return "nonExistent"
+// Define the Dislike schema
+const dislikeSchema = new mongoose.Schema({
+  blogID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Blog', 
+    required: true
+  },
+  userID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', 
+    required: true
   }
-  const existingDisike = await dislikesCollection.findOne({ userID: new ObjectId(userId), blogID: new ObjectId(blogId) }) ;
-  if (existingDisike) {
-      return "already"
-  }
-  return await dislikesCollection.insertOne({ blogID: new ObjectId(blogId), userID: new ObjectId(userId) });
-}
-async function removeDislike(userId,blogId) {
-  let client = getClient();
-  const dislikesCollection = client.db("test").collection("dislikes");
-  return await dislikesCollection.deleteOne({ blogID: new ObjectId(blogId), userID: new ObjectId(userId) });
-}
+});
 
-module.exports={dislikeBlog,removeDislike}
+// Create a model from the schema
+const Dislike = mongoose.model('Dislike', dislikeSchema);
+
+module.exports = Dislike;

@@ -1,15 +1,11 @@
-// db.js
+const mongoose = require('mongoose');
+require('dotenv').config();
 
-const { MongoClient } = require('mongodb');
-require("dotenv").config()
 const connectionString = process.env.DB_CONNECTION_STRING;
-
-let client;
 
 async function connectToDatabase() {
   try {
-    client = new MongoClient(connectionString);
-    await client.connect();
+    await mongoose.connect(connectionString);
     console.log('Connected to MongoDB');
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
@@ -18,10 +14,7 @@ async function connectToDatabase() {
 }
 
 function getClient() {
-  if (!client) {
-    throw new Error('MongoDB client is not connected');
-  }
-  return client;
+  throw new Error('Mongoose client is not needed. Use mongoose directly.');
 }
 
 module.exports = { connectToDatabase, getClient };
